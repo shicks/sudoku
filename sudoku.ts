@@ -5,6 +5,8 @@ import * as lz from 'lz-string';
 
 // Tools for setting and solving sudokus
 
+const ANTI_KNIGHT = true;
+
 // Set of bits from 0..80
 export type Shading = bigint & {__shading__: never};
 
@@ -125,12 +127,40 @@ export namespace Shading {
     return out as Shading[];
   })();
 
+  export const ANTI_KNIGHT_PATTERN: readonly Shading[] = (() => {
+    const out: bigint[] = [];
+    function add(x: bigint, r: number, c: number): bigint {
+      if (r < 0 || r >= 9 || c < 0 || c >= 9) return x;
+      return x | (1n << BigInt(9 * r + c));
+    }
+    for (let r = 0; r < 9; r++) {
+      for (let c = 0; c < 9; c++) {
+        let x = 0n;
+        x = add(x, r - 2, c - 1);
+        x = add(x, r - 2, c + 1);
+        x = add(x, r - 1, c - 2);
+        x = add(x, r - 1, c + 2);
+        x = add(x, r + 1, c - 2);
+        x = add(x, r + 1, c + 2);
+        x = add(x, r + 2, c - 1);
+        x = add(x, r + 2, c + 1);
+        out.push(x);
+      }
+    }
+    return out as Shading[];
+  })();
+
   export const EXCLUSIONS: readonly Shading[] = (() => {
     const out = Array.from({length: 81}, () => 0n);
     for (const s of [...Shading.ROWS, ...Shading.COLS, ...Shading.BOXES]) {
       for (const b of bits(s)) {
         // out[b] = or(out[b], s);
         out[b] |= s;
+      }
+    }
+    if (ANTI_KNIGHT) {
+      for (let b = 0; b < 81; b++) {
+        out[b] |= ANTI_KNIGHT_PATTERN[b];
       }
     }
     for (let b = 0; b < 81; b++) {
@@ -140,6 +170,7 @@ export namespace Shading {
   })();
 
   // All the possible 9-bit patterns that only touch one cell per row/col/box.
+  // With normal sudoku rules, this is 46656 patterns; with anti-knight, it's 3176.
   export const SUDOKU_PATTERNS: readonly Shading[] = (() => {
     const out: Shading[] = [];
     function add(pattern: Shading, box: number) {
@@ -153,6 +184,25 @@ export namespace Shading {
       }
     }
     add(ALL, 0);
+    return out;
+  })();
+
+  export const SUDOKU_PATTERN_EXCLUSIONS: readonly bigint[] = (() => {
+    const n = SUDOKU_PATTERNS.length;
+    if (SUDOKU_PATTERNS.length > 4000) return [];
+    // if there's few enough patterns, map each pair that intersect
+    // we find that about 58%±1.5% of patterns are excluded.
+    const out = Array.from(SUDOKU_PATTERNS, () => 0n);
+    for (let i = 0; i < n; i++) {
+      let cnt = 0;
+      for (let j = i + 1; j < n; j++) {
+        if (SUDOKU_PATTERNS[i] & SUDOKU_PATTERNS[j]) {
+          cnt++;
+          out[i] |= (1n << BigInt(j));
+          out[j] |= (1n << BigInt(i));
+        }
+      }
+    }
     return out;
   })();
 }
@@ -297,6 +347,7 @@ export namespace Grid {
   // Attempts to solve the grid, should be called after normalize...?
   export function solve(g: Grid, limit = 2): Grid[] {
     // Look for patterns that can fit, recurse/backtrack
+    console.log(`solve:\n${show(g)}`);
 
     // Filter the set of patterns by digit
     const patsByDigit: Grid[][] = Array.from({length: 9}, (_, d) =>
@@ -310,13 +361,18 @@ export namespace Grid {
     return [...solutions];
 
     function solve(g: Grid) {
+
+      // PROBLEM - why can't we solve anti-knight?
+      //   - most constrained digit doesn't seem to be the patterns we're getting??
+
       if (solutions.size >= limit) return;
       const n = normalize(g);
-      if (!n) return;
+      if (!n) { console.log(`failed normalize`); return; }
       g = n;
       const sizes = Array.from({length: 9}, (_, i) => count((g & (ALL_ONES << BigInt(i))) as Grid));
       // check if we're solved and/or impossible
       if (sizes.every(s => s <= 9)) {
+        console.log(`at most 9 of each digit: ${sizes.join(',')}`);
         if (sizes.every(s => s === 9)) solutions.add(g);
         return;
       }
@@ -326,6 +382,7 @@ export namespace Grid {
         if (sizes[i] >= sizes[d] || sizes[i] <= 9) continue;
         d = i;
       }
+      console.log(`most constrained: ${d}: ${sizes[d]} - ${patsByDigit[d].length} patterns\n${show(g)}`);
 
       // look for patterns that constrain it further
       //  - TODO - this is slow, can we make a trie of the patterns?
@@ -333,6 +390,7 @@ export namespace Grid {
       //         - guarantee we only look at the 1/9 or 1/81 that actually matter?
       for (const p of patsByDigit[d]) {
         if ((g & p) === p) {
+          console.log(`found allowable pattern:\n${show(p)}`);
           const e = exclusion(p as Grid);
           solve((g & ~e) as Grid);
         }
@@ -342,6 +400,7 @@ export namespace Grid {
 
   // Apply exclusions for all fixed numbers.  Iterates to a fixed point.
   export function normalize(g: Grid): Grid|undefined {
+    console.log(`normalize`);
     let out = g;
     for (let i = 0; i < 81; i++) {
       const m = lookup(out, i);
@@ -351,6 +410,7 @@ export namespace Grid {
       const e = EXCLUSIONS[9 * i + v - 1];
       out = (out & ~e) as Grid;
     }
+    console.log(`${Grid.show(g)}\nto\n${Grid.show(out)}`);
     return out === g ? out : normalize(out);
   }
 
@@ -554,9 +614,6 @@ function toGrid(s: Shading): Grid {
   // for (const component of 
 }
 
-let s = fill(5);
-let e = score(s);
-
 function color(fg?: number, bg?: number): string {
   const terms: number[] = [];
   if (fg != null) terms.push(30 + fg);
@@ -626,7 +683,7 @@ function explore(s: Shading) {
     if (solutions.length === 0) {
       // overconstrained
       console.log(`overconstrained with ${digit.length} digits`);
-      //console.log(Grid.show(g, {showNum: showParity}));
+      console.log(Grid.show(g)); //, {showNum: showParity}));
       const i = Math.floor(Math.random() * digit.length);
       const [c] = digit.splice(i, 1);
       parity.push(c);
@@ -667,6 +724,8 @@ function explore(s: Shading) {
 }
 
 function main() {
+  let s = fill(5);
+  let e = score(s);
   for (let i = 1; i <= 1000000; i++) {
     const n = mutate(s);
     const ns = score(n);
@@ -716,9 +775,70 @@ function exportUrl(g: Grid): string {
     solution: [
       // 81 elements...
     ],
+    text: [
+      // rook symbol in cell
+      {cells: ["R1C1"], fontC: "#aaa", size: 1.25, value: "♜"},
+    ],
   });
   // return `https://f-puzzles.com/?load=${lz.compressToBase64(json)}`;
   return `https://sudokupad.add/fpuz${lz.compressToBase64(json)}`;
+}
+
+
+function main3() {
+  const pats = Shading.SUDOKU_PATTERNS;
+  const excl = Shading.SUDOKU_PATTERN_EXCLUSIONS;
+  // exhaustively enumerate all patterns
+  //  - there's a lot.
+  // what we need to do next is generate number-agnostic patterns and then
+  // fill numbers in to ensure certain given cells work, and then see what
+  // other cells can also be circled?
+  //  - is it solvable????
+  let count = 0;
+  function search(i: number, filled: number, excluded: bigint, used: bigint) {
+    if (filled === 9) {
+      console.log(`found: ${[...Bitmap.bits(used)].join(',')}`);
+      count++;
+      return;
+    }
+    for (; i < pats.length; i++) {
+      const mask = (1n << BigInt(i));
+      if (excluded & mask) continue;
+      search(i + 1, filled + 1, excluded | excl[i], used | mask);
+    }
+  }
+  search(0, 0, 0n, 0n);
+  console.log(`found ${count} anti-knight fillings`);
+
+  // let cur = Shading.EMPTY;
+  // for (let i = 0; i < size; i++) {
+  //   while (true) {
+  //     const p = pats[Math.floor(Math.random() * pats.length)];
+  //     if (Shading.and(cur, p)) continue;
+  //     cur = Shading.or(cur, p);
+  //     break;
+  //   }
+  // }
+  // return cur;
+  // let s = fill(5);
+  // let e = score(s);
+  // for (let i = 1; i <= 1000000; i++) {
+  //   const n = mutate(s);
+  //   const ns = score(n);
+  //   if (ns <= e) {
+  //     s = n;
+  //     e = ns;
+  //     if (!e) {
+  //       explore(s);
+  //       console.log('======================');
+  //       for (let j = 0; j < i; j += 10000) s = mutate(s);
+  //       e = score(s);
+
+  //       // TODO - add digits until overconstrained, remove digits until under...
+
+  //     }
+  //   }
+  // }
 }
 
 // function main2() {
@@ -753,7 +873,7 @@ function main2() {
 
 if (import.meta.url.startsWith('file:')) {
   const modulePath = url.fileURLToPath(import.meta.url);
-  if (process.argv[1] === modulePath) main();
+  if (process.argv[1] === modulePath) main3();
 }
 
 // NEXT: given a score=0 grid, put appropriate numbers on the boxes

@@ -1,0 +1,172 @@
+{
+  "size": 8,
+  "title": "Parity Chess",
+  "author": "steve_hacks",
+  "ruleset": "Normal 8x8 sudoku rules apply: each row, column, and box, must contain the digits from 1 to 8 exactly once each.\n\nEach cell with a chess piece must contain a digit equal to the number of cells of opposite parity from itself that the given piece can attack, according to normal chess movement rules.",
+  "grid": [
+    [{},{"c": "#000000", "cArray": ["#000000"]},{},{"c": "#000000", "cArray": ["#000000"]},{},{"c": "#000000", "cArray": ["#000000"]},{},{"c": "#000000", "cArray": ["#000000"]}],
+    [{"c": "#000000", "cArray": ["#000000"]},{},{"c": "#000000", "cArray": ["#000000"]},{},{"c": "#000000", "cArray": ["#000000"]},{},{"c": "#000000", "cArray": ["#000000"]},{}],
+    [{},{"c": "#000000", "cArray": ["#000000"]},{},{"c": "#000000", "cArray": ["#000000"]},{},{"c": "#000000", "cArray": ["#000000"]},{},{"c": "#000000", "cArray": ["#000000"]}],
+    [{"c": "#000000", "cArray": ["#000000"]},{},{"c": "#000000", "cArray": ["#000000"]},{},{"c": "#000000", "cArray": ["#000000"]},{},{"c": "#000000", "cArray": ["#000000"]},{}],
+    [{},{"c": "#000000", "cArray": ["#000000"]},{},{"c": "#000000", "cArray": ["#000000"]},{},{"c": "#000000", "cArray": ["#000000"]},{},{"c": "#000000", "cArray": ["#000000"]}],
+    [{"c": "#000000", "cArray": ["#000000"]},{},{"c": "#000000", "cArray": ["#000000"]},{},{"c": "#000000", "cArray": ["#000000"]},{},{"c": "#000000", "cArray": ["#000000"]},{}],
+    [{},{"c": "#000000", "cArray": ["#000000"]},{},{"c": "#000000", "cArray": ["#000000"]},{},{"c": "#000000", "cArray": ["#000000"]},{},{"c": "#000000", "cArray": ["#000000"]}],
+    [{"c": "#000000", "cArray": ["#000000"]},{},{"c": "#000000", "cArray": ["#000000"]},{},{"c": "#000000", "cArray": ["#000000"]},{},{"c": "#000000", "cArray": ["#000000"]},{}]
+  ],
+  "text": [
+    {
+      "cells": [
+        "R8C1"
+      ],
+      "value": "♞",
+      "fontC": "#AAAAAA",
+      "size": 1.25
+    },
+    {
+      "cells": [
+        "R7C3"
+      ],
+      "value": "♚",
+      "fontC": "#AAAAAA",
+      "size": 1.25
+    },
+    {
+      "cells": [
+        "R8C4"
+      ],
+      "value": "♞",
+      "fontC": "#AAAAAA",
+      "size": 1.25
+    },
+    {
+      "cells": [
+        "R8C5"
+      ],
+      "value": "♜",
+      "fontC": "#AAAAAA",
+      "size": 1.25
+    },
+    {
+      "cells": [
+        "R6C2"
+      ],
+      "value": "♝",
+      "fontC": "#AAAAAA",
+      "size": 1.25
+    },
+    {
+      "cells": [
+        "R7C1"
+      ],
+      "value": "♝",
+      "fontC": "#AAAAAA",
+      "size": 1.25
+    },
+    {
+      "cells": [
+        "R6C8"
+      ],
+      "value": "♞",
+      "fontC": "#AAAAAA",
+      "size": 1.25
+    },
+    {
+      "cells": [
+        "R5C8"
+      ],
+      "value": "♝",
+      "fontC": "#AAAAAA",
+      "size": 1.25
+    },
+    {
+      "cells": [
+        "R5C7"
+      ],
+      "value": "♞",
+      "fontC": "#AAAAAA",
+      "size": 1.25
+    },
+    {
+      "cells": [
+        "R4C7"
+      ],
+      "value": "♜",
+      "fontC": "#AAAAAA",
+      "size": 1.25
+    },
+    {
+      "cells": [
+        "R4C8"
+      ],
+      "value": "♝",
+      "fontC": "#AAAAAA",
+      "size": 1.25
+    },
+    {
+      "cells": [
+        "R1C8"
+      ],
+      "value": "♛",
+      "fontC": "#AAAAAA",
+      "size": 1.25
+    },
+    {
+      "cells": [
+        "R1C7"
+      ],
+      "value": "♝",
+      "fontC": "#AAAAAA",
+      "size": 1.25
+    },
+    {
+      "cells": [
+        "R1C4"
+      ],
+      "value": "♞",
+      "fontC": "#AAAAAA",
+      "size": 1.25
+    },
+    {
+      "cells": [
+        "R2C3"
+      ],
+      "value": "♛",
+      "fontC": "#AAAAAA",
+      "size": 1.25
+    },
+    {
+      "cells": [
+        "R2C1"
+      ],
+      "value": "♚",
+      "fontC": "#AAAAAA",
+      "size": 1.25
+    },
+    {
+      "cells": [
+        "R6C6"
+      ],
+      "value": "♝",
+      "fontC": "#AAAAAA",
+      "size": 1.25
+    },
+    {
+      "cells": [
+        "R8C8"
+      ],
+      "value": "♝",
+      "fontC": "#AAAAAA",
+      "size": 1.25
+    }
+  ],
+  "solution": [
+    5,6,2,4,7,3,1,8,
+    3,7,8,1,6,5,4,2,
+    4,2,1,8,3,6,7,5,
+    6,3,7,5,2,1,8,4,
+    8,5,3,6,1,4,2,7,
+    7,1,4,2,5,8,6,3,
+    1,8,5,7,4,2,3,6,
+    2,4,6,3,8,7,5,1
+  ]
+}
