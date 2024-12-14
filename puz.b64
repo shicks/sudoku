@@ -1,0 +1,46 @@
+N4IgzglgXgpiBcAWANCALhNAbO8QBEIA3CAExgAIBDAO1IoGEB7GgYwFcAnEVK9tABZNueMGhhEYAfQFVWAazA8QndjjAw0CEAAUscyjXYBbAEYxOYCgAYKaJhQCMAVgoQadgZQDmnMhTB2VgFPKjQKYUEmbxYqLAoaGAhvAVNhK1lJagpSCAAzPIsYNkomPOpwnCoxCgBmZGo6HIgqGJo4hKSUtMsKTMoqZoKikojysIpjJhqATgA6CgAxYWM7AHcHRLWKRAAPRApfMitTAE9mklyabwoYORCjMwsKM52GgAd9VncbwUoAR3YTAwxXC7k8lFYwk4MDA7xYVxurBgWHi4JYPj89Fo9D+FBhxio7nInDcHjxwK8nAWFAA8pwrlROOdAqQmPJ2ABqXKtWLxVTqajvT7newvSmHLFgeDNbyYKyE840YH4mDvO5gjy0c6cJhrBpQrAmGgNNK7BrCZq89pYBYAVQ0svlFAAggBaRYUPKWxzWN0uObKI6kBAAbVDoCIcXYuFqAF9kJHo7gAEwJpNG3COVByyQ0BBoVQwdMgKOZhCIOMAXWQEdLyYQjhLZZjFebDfg8cT9fL8DTNbrLdwle7Q8b7d7adHHfjA4zrb7E4XXfnw6XWerNZAPLacU5BaLqB3fLdB5jqDATCNGBYYfqKeQ2ZQT+Q9+Qz+QD7f9WfVbjQA==
+
+
+{
+  "size": 4,
+  "title": "Divide and Concur",
+  "author": "steve_hacks",
+  "ruleset": "Place numbers 0 to 15 in the grid such that orthogonal neighbors have a difference of at least 3, and diagonal neighbors have a difference of at most 9. Form two new 4x4 grids by dividing each number by 4, placing the quotient in the corresponding cell in one grid and the remainder in the other.  Ordinary sudoku+diagonal rules apply to both grids: digits may not repeat in any row, column, box, or diagonal. Use digits A-F for 10-15.",
+  "grid": [
+    [
+      {},
+      {},
+      {
+        "value": 1,
+        "given": true
+      },
+      {}
+    ],
+    [
+      {},
+      {},
+      {},
+      {}
+    ],
+    [
+      {},
+      {},
+      {},
+      {}
+    ],
+    [
+      {},
+      {},
+      {},
+      {}
+    ]
+  ],
+  "diagonal+": true,
+  "diagonal-": true,
+  "solution": [
+    "F", 4, 1, "A",
+    2, 9, "C", 7,
+    8, 3, 6, "D",
+    5, "E", "B", 0
+  ]
+}
