@@ -1,3 +1,26 @@
+export function seq<N extends number|bigint>(n: N): N[];
+export function seq<N extends number|bigint, T>(n: N, fn: (i: N) => T): T[];
+export function seq<T>(n: number|bigint, value: T): T[];
+export function seq<T>(n: number|bigint, fn?: T|((i: number|bigint) => T)): T[] {
+  const num = typeof n === 'bigint' ? BigInt : Number;
+  return fn == null ?
+    Array.from({length: Number(n)}, (_, i) => num(i)) :
+    typeof fn === 'function' ?
+    Array.from({length: Number(n)}, (_, i) => (fn as Function)(num(i))) :
+    Array(n).fill(fn as any);
+}
+
+export function seqn(n: number): bigint[];
+export function seqn<T>(n: number, fn: (i: bigint) => T): T[];
+export function seqn<T>(n: number, value: T): T[];
+export function seqn<T>(n: number, fn?: T|((i: bigint) => T)): T[] {
+  return fn == null ?
+    Array.from({length: n}, (_, i) => BigInt(i)) :
+    typeof fn === 'function' ?
+    Array.from({length: n}, (_, i) => (fn as Function)(BigInt(i))) :
+    Array(n).fill(fn);
+}
+
 // Counts up to 30 bits, using only SMI to hopefully make it _even_ faster
 export function count30(i: bigint|number): number {
   let j = Number(i);

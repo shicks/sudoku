@@ -1,29 +1,27 @@
 #!/usr/bin/env -S node -r source-map-support/register
 
-import * as util from './util';
-
-const SEARCH_FOR_MASYUDOKU = false;
+import { countFor, seq } from './util.js';
 
 // TODO - work with polyominos (as shadings?) - could use same N
 // and just shift them around as needed? or use a different representation that
 // doesn't presuppose a grid width?
 
-const N = 6;
+const N = 9;
 const Nn = BigInt(N);
-const Nm1 = N - 1;
-const Nm1n = Nn - 1n;
+//const Nm1 = N - 1;
+//const Nm1n = Nn - 1n;
 
-const Nt2 = N * 2;
+//const Nt2 = N * 2;
 
 const N2 = N * N;
 const N2n = BigInt(N2);
-const N2m1 = N2 - 1;
+//const N2m1 = N2 - 1;
 const N2m1n = N2n - 1n;
 
 const N3 = N2 * N;
 const N3n = BigInt(N3);
-const N3m1 = N3 - 1;
-const N3m1n = N3n - 1n;
+//const N3m1 = N3 - 1;
+//const N3m1n = N3n - 1n;
 
 const DIGIT = (1n << Nn) - 1n
 
@@ -113,7 +111,7 @@ export namespace Shading {
     return out;
   }
 
-  export const count = util.countFor(N2);
+  export const count = countFor(N2);
 
   interface ShowOpts {
     lines?: boolean;
@@ -185,7 +183,7 @@ export namespace Shading {
         const digit = digitMap.get(b) ?? String.fromCharCode(0x2800 | Number(b)); // '.';
         return ` ${digit} `;
       }
-      if (!col || col === 12) return verticalEdge;
+      if (!col || col === twoN) return verticalEdge;
       return same(regions, bit, bit - N) ? ' ' : verticalEdge;
     } else {
       // on a horizontal edge
@@ -258,13 +256,13 @@ export namespace Shading {
   
   // set of 9 shadings, each representing a single fully-shaded row.
   export const ROWS: readonly Shading[] =
-    Array.from({length: N}, (_, row) => (DIGIT << Nn * BigInt(row)) as Shading);
+    seq(Nn, (row) => (DIGIT << Nn * row) as Shading);
 
   // set of 9 shadings, each representing a single fully-shaded column.
   export const COLS: readonly Shading[] =
-    Array.from({length: N}, (_, col) => {
+    seq(Nn, (col) => {
       let x = 0n;
-      for (let c = 1n << BigInt(N2 - N + col); c; c >>= Nn) {
+      for (let c = 1n << (N2n - Nn + col); c; c >>= Nn) {
         x |= c;
       }
       return x as Shading;
@@ -366,7 +364,7 @@ export namespace Shading {
   export function patterns(exclusions: Map<bigint, Shading>): Shading[] {
     const out: Shading[] = [];
     function add(pattern: Shading, col: number) {
-      if (col === 6) {
+      if (col === N) {
         out.push(pattern);
         return;
       }
@@ -415,9 +413,9 @@ export namespace Shading {
 
   export function regionsFromGrid(grid: Grid): Shading[] {
     let shadings = [0n, 0n, 0n, 0n, 0n, 0n];
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < N; i++) {
       for (let b = 0; b < N2; b++) {
-        if (grid & (1n << BigInt(6 * b + i))) shadings[i] |= (1n << BigInt(b));
+        if (grid & (1n << BigInt(N * b + i))) shadings[i] |= (1n << BigInt(b));
       }
     }
     return shadings as Shading[];
@@ -428,7 +426,7 @@ export namespace Grid {
   export function fromArray(a: number[]): Grid {
     let out = 0n;
     for (let i = 0; i < N2; i++) {
-      if (a[i]) out |= (1n << (BigInt(6 * i + a[i] - 1)));
+      if (a[i]) out |= (1n << (BigInt(N * i + a[i] - 1)));
     }
     return out as Grid;
   }
@@ -438,14 +436,14 @@ export namespace Grid {
     let mask = 1n << N2m1n;
     let out = 0n;
     while (mask) {
-      out <<= 6n;
+      out <<= Nn;
       if (s & mask) out |= 1n;
       mask >>= 1n;
     }
     return out as Grid;
   }
   export function fromShadings(shadings: readonly Shading[]): Grid {
-    if (shadings.length > 6) throw new Error('too many shadings');
+    if (shadings.length > N) throw new Error('too many shadings');
     let g = 0n;
     for (let i = 0; i < shadings.length; i++) {
       g |= (fromShading(shadings[i]) << BigInt(i));
@@ -454,7 +452,7 @@ export namespace Grid {
   }
   export const ALL_ONES = fromShading(Shading.ALL);
 
-  export const count = util.countFor(N3);
+  export const count = countFor(N3);
 
   export function unfilled(givens: Grid) {
     let unfilled: bigint = 0n;
@@ -469,17 +467,17 @@ export namespace Grid {
 // Build a random set of regions
 
 const neighbors: ReadonlyArray<readonly number[]> = (() => {
-  const out: number[][] = Array.from({length: N2}, () => []);
-  for (let r = 0; r < N2; r += 6) {
-    for (let c = 0; c < 6; c++) {
+  const out: number[][] = seq(N2, () => []);
+  for (let r = 0; r < N2; r += N) {
+    for (let c = 0; c < N; c++) {
       const x = r + c;
       if (c) {
         out[x].push(x - 1);
         out[x - 1].push(x);
       }
       if (r) {
-        out[x].push(x - 6);
-        out[x - 6].push(x);
+        out[x].push(x - N);
+        out[x - N].push(x);
       }
     }
   }
@@ -494,7 +492,7 @@ const neighborMap: ReadonlyMap<bigint, bigint> = new Map(
     return [1n << BigInt(c), shading];
   }));
 const digitMap: ReadonlyMap<bigint, number> =
-    new Map([[1n, 1], [2n, 2], [4n, 3], [8n, 4], [16n, 5], [32n, 6]]);
+    new Map(seq(N, (i) => [1n << BigInt(i), i + 1]));
 
 // Returns a random singleton shading
 function pickBit(shading: Shading): Shading {
@@ -507,14 +505,6 @@ function pickBit(shading: Shading): Shading {
   return picked as Shading;
 }
 
-function count64(i: bigint): number {
-  i -= (i >> 1n) & 0x5555555555555555n;
-  i = (i & 0x3333333333333333n) +
-      ((i >> 2n) & 0x3333333333333333n);
-  i = (i + (i >> 4n)) & 0x0f0f0f0f0f0f0f0fn;
-  return Number(((i * 0x0101010101010101n) >> 56n) & 0xffn);
-}
-
 // Returns a random singleton shading among those with the lowest
 // number of available neighbors.  This is the same as pickBit
 // except it keeps track of liberties and resets count whenever
@@ -525,7 +515,7 @@ function pickCornerBit(available: Shading): Shading {
   let liberties = 5;
   for (let x: bigint = available; x;) {
     const rest = x & (x - 1n); const bit = x ^ rest; x = rest;
-    const num = count64(neighborMap.get(bit) & available);
+    const num = Shading.count(neighborMap.get(bit) & available);
     if (num < liberties) {
       liberties = num;
       count = 0;
@@ -535,21 +525,21 @@ function pickCornerBit(available: Shading): Shading {
   return picked as Shading;
 }
 
-function makeRegions(): Shading[] {
+export function makeRegions(): Shading[] {
   OUTER:
   for (let attempt = 0; attempt < 100; attempt++) {
-    const regions = [0n, 0n, 0n, 0n, 0n, 0n];
+    const regions = seq(N, 0n);
     let available = (1n << N2n) - 1n;
     function add(cell: Shading, regionNum: number) {
       available &= ~cell;
       regions[regionNum] |= cell;
     }
-    for (let regionNum = 0; regionNum < 6; regionNum++) {
+    for (let regionNum = 0; regionNum < N; regionNum++) {
       const start = pickCornerBit(available as Shading);
       if (start == null) throw new Error('no start?');
       let region: bigint = start;
       add(start, regionNum);
-      for (let i = 1; i < 6; i++) {
+      for (let i = 1; i < N; i++) {
         const eligible = Shading.neighborsOf(region as Shading) & available;
         if (!eligible) {
           //console.error(`painted into a corner: retry ${attempt + 1}`);
@@ -601,61 +591,6 @@ function makeRegions(): Shading[] {
 //console.log(Shading.showRegions(Grid.fromShadings(Shading.BOXES)));
 
 
-if (SEARCH_FOR_MASYUDOKU) {
-  for (let i = 0; i < 200000; i++) {
-    const regions = makeRegions();
-    // look for fillominos - only need one splitting
-    const fillominos: number[][] = [];
-
-    for (let part = 0; part < 64; part++) {
-      const inside = checkFillomino(regions.filter((_, i) => part & (1 << i)));
-      const outside = checkFillomino(regions.filter((_, i) => !(part & (1 << i))));
-      let insideShading = 0n;
-      for (const i of Bitmap.bits(BigInt(part))) {
-        insideShading |= regions[i];
-      }
-      if (inside && outside && Shading.isConnected(insideShading as Shading)) {
-        fillominos.push(Bitmap.bits(BigInt(part)).map(x => x + 1));
-        // TODO - convert this to a bipartite grid
-      }
-    }
-    if (!fillominos.length) continue; // log?
-
-    // look for a star battle solution
-    const regionGrid = Grid.fromShadings(regions);
-    const givens = computeGivens(regions, sightGrid(regionGrid));
-    if (!givens) continue;
-
-    // console.log(Shading.showRegions(regionGrid, givens));
-    // console.log(Shading.showRegions(regionGrid));
-    for (const f of fillominos) {
-      // reduce regionGrid to fillominos
-      let fillominoGrid = 0n;
-      for (let i = 0; i < 6; i++) {
-        fillominoGrid |= (Grid.fromShading(regions[i]) << (f.includes(i + 1) ? 1n : 0n));
-      }
-      //console.log(`Fillomino ${f.join(', ')}`);
-      console.log(Shading.showRegions(fillominoGrid as Grid, givens));
-    }
-
-    const exclusions = Shading.exclusions([
-      ...regions,
-      ...Shading.ROWS,
-      ...Shading.COLS,
-    ]);
-    const [a, b] = solve(givens, regionGrid, exclusions);
-    //const [a, b] = solve(givens, regionGrid, exclusions);
-    if (a) console.log(Shading.showRegions(regionGrid, a));  
-    if (b) console.log(Shading.showRegions(regionGrid, b));  
-    if (!a) {
-      console.log(`No solution`);
-    } else if (b) {
-      console.log(`Multiple solutions`);
-    } else {
-      console.log(`Unique solution`);
-    }
-  }
-}
 
 
 // Given regions, figure out if they fillomino uniquely:
@@ -674,7 +609,7 @@ if (SEARCH_FOR_MASYUDOKU) {
 //     xx             ox
 //
 // We still need some manual review here
-function checkFillomino(shadings: Shading[]): boolean {
+export function checkFillomino(shadings: Shading[]): boolean {
   // note: shading may not be fully-connected, in which case
   // this is probably easier?
   const periphery = shadings.map(Shading.peripheryOf);
@@ -701,7 +636,7 @@ function checkFillomino(shadings: Shading[]): boolean {
 //     exhaustively pick all the possibilities and then
 //     block out all the exclusions
 //      a. then place the remainder however we can - exhaustive will still work
-function computeGivens(geometry: Shading[], sights: Grid): Grid|undefined {
+export function computeGivens(geometry: Shading[], sights: Grid): Grid|undefined {
   // TODO - maybe just pass the precomputed exclusions instead of geometry grid?
   // NOTE: these exclusions include anti-king rules as well
 
@@ -715,11 +650,11 @@ function computeGivens(geometry: Shading[], sights: Grid): Grid|undefined {
   // Map of sight# -> shading of cells that have that sight#.  Sort by count.
   type Sight = [sightNum: number, cells: Shading, count: number];
   const bySight: Sight[] = (() => {
-    const arr = [undefined, undefined, 0n, 0n, 0n, 0n, 0n]; // shadings
+    const arr = seq(N + 1, (i) => i < 2 ? undefined : 0n);
     for (let i = 0n; i < N2n; i++) {
-      arr[digitMap.get((sights >> (i * 6n)) & DIGIT)] |= (1n << i);
+      arr[digitMap.get((sights >> (i * Nn)) & DIGIT)] |= (1n << i);
     }
-    return arr.flatMap((s, i) => s != null ? [[i, s as Shading, count64(s)] as Sight] : [])
+    return arr.flatMap((s, i) => s != null ? [[i, s as Shading, Shading.count(s)] as Sight] : [])
         .sort((a, b) => a[2] - b[2]);
   })();
   // Make sure there's at least one of each sight#
@@ -779,11 +714,11 @@ function computeGivens(geometry: Shading[], sights: Grid): Grid|undefined {
 }
 
 
-function sightGrid(grid: Grid): Grid {
+export function sightGrid(grid: Grid): Grid {
   let shift = 0n;
   let sight = 0n;
   for (let r = 0n; r < N3n; r += N2n) {
-    for (let c = 0n; c < N2n; c += 6n) {
+    for (let c = 0n; c < N2n; c += Nn) {
       const bit = (grid >> (r + c)) & DIGIT;
       let count = 1n;
       for (let rr = r + N2n; rr < N3n; rr += N2n) {
@@ -794,40 +729,40 @@ function sightGrid(grid: Grid): Grid {
         if (!(grid & (bit << (rr + c)))) break;
         count++;
       }
-      for (let cc = c + 6n; cc < N2n; cc += 6n) {
+      for (let cc = c + Nn; cc < N2n; cc += Nn) {
         if (!(grid & (bit << (r + cc)))) break;
         count++;
       }
-      for (let cc = c - 6n; cc >= 0n; cc -= 6n) {
+      for (let cc = c - Nn; cc >= 0n; cc -= Nn) {
         if (!(grid & (bit << (r + cc)))) break;
         count++;
       }
       sight |= 1n << (shift + count - 1n);
-      shift += 6n;
+      shift += Nn;
     }
   }
   return sight as Grid;
 }
 
 // Attempts to solve the grid, should be called after normalize...?
-function* solve(g: Grid, geometry: Grid, exclusions: Map<bigint, Shading>): Generator<Grid> {
+export function* solve(g: Grid, geometry: Grid, exclusions: Map<bigint, Shading>): Generator<Grid> {
   // Look for patterns that can fit, recurse/backtrack
   // console.log(`solve:\n${Shading.showRegions(geometry, g)}`);
   const patterns = Shading.patterns(exclusions);
   const unfilled = Grid.unfilled(g);
 
   // Filter the set of patterns by digit
-  const patsByDigit: Grid[][] = [[], [], [], [], [], []];
+  const patsByDigit: Grid[][] = seq(N, () => []);
   for (const p of patterns) {
-    for (let d = 0; d < 6; d++) {
+    for (let d = 0; d < N; d++) {
       const p1 = Grid.fromShading(p) << BigInt(d);
       if ((unfilled & p1) === p1) patsByDigit[d].push(p1 as Grid);
     }
   }
 
   const exclByDigit: Map<bigint, Grid> = new Map([...exclusions].flatMap(
-    ([k, v]) => [0n, 1n, 2n, 3n, 4n, 5n].map(
-      d => [(k ** 6n) << d, Grid.fromShading(v) << d] as [bigint, Grid])));
+    ([k, v]) => seq(Nn, d =>
+      [(k ** Nn) << d, Grid.fromShading(v) << d] as [bigint, Grid])));
   const exclByPattern: Map<bigint, Grid> = (() => {
     const map = new Map<bigint, Grid>();
     for (const p of patsByDigit.flat()) {
@@ -848,11 +783,11 @@ function* solve(g: Grid, geometry: Grid, exclusions: Map<bigint, Shading>): Gene
     const n = normalize(g);
     if (!n) return; // { console.log(`failed normalize`); return; }
     g = n;
-    const sizes = [0, 1, 2, 3, 4, 5].map((i) => Grid.count((g & (Grid.ALL_ONES << BigInt(i))) as Grid));
+    const sizes = seq(N).map((i) => Grid.count((g & (Grid.ALL_ONES << BigInt(i))) as Grid));
     // check if we're solved and/or impossible
-    if (sizes.every(s => s <= 6)) {
+    if (sizes.every(s => s <= N)) {
       //console.log(`at most 6 of each digit: ${sizes.join(',')}`);
-      if (sizes.every(s => s === 6)) {
+      if (sizes.every(s => s === N)) {
         if (!solutions.has(g)) yield g;
         solutions.add(g);
       }
@@ -860,8 +795,8 @@ function* solve(g: Grid, geometry: Grid, exclusions: Map<bigint, Shading>): Gene
     }
     // find the most-constrained number
     let d = -1;
-    for (let i = 0; i < 6; i++) {
-      if (sizes[i] >= sizes[d] || sizes[i] <= 6) continue;
+    for (let i = 0; i < N; i++) {
+      if (sizes[i] >= sizes[d] || sizes[i] <= N) continue;
       d = i;
     }
     //console.log(`most constrained: ${d}: ${sizes[d]} - ${patsByDigit[d].length} patterns\n${Shading.showRegions(geometry, g)}`);
@@ -905,7 +840,7 @@ function* solve(g: Grid, geometry: Grid, exclusions: Map<bigint, Shading>): Gene
       // out = (out & ~e) as Grid;
       const b = g & mask;
       // console.log(`normalize\n${Shading.showRegions(geometry, mask as Grid)}\n${Shading.showRegions(geometry, b as Grid)}`);
-      mask <<= 6n;
+      mask <<= Nn;
       if (!b) return undefined;
       if (b & (b - 1n)) continue; // not a fixed digit.
       const e = exclByDigit.get(b);
