@@ -69,6 +69,14 @@ export const count1024: (b: bigint) => number = (() => {
   };
 })();
 
+export function countFor(bits: number): (b: bigint) => number {
+  if (bits < 30) return count30;
+  if (bits < 32) return count32;
+  if (bits < 64) return count64;
+  if (bits < 128) return count128;
+  return count1024;
+}
+
 interface Bitmap<T extends number|bigint> {
   ctor(arg: number|bigint): T;
   bit(n: number): T;
